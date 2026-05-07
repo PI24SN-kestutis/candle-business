@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="lt" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kliento zona</title>
+    <link rel="stylesheet" th:href="@{/app.css}">
+</head>
+<body>
+<header class="top-nav">
+    <div class="container">
+        <a href="/" class="home-link">Grįžti į pagrindinį puslapį</a>
+    </div>
+</header>
+<main class="shell stack">
+    <section class="hero">
+        <div class="eyebrow">Kliento zona</div>
+        <h1>Užsakymai</h1>
+        <p>Klientas gali sukurti, redaguoti, atšaukti, ištrinti ir užbaigti savo užsakymus.</p>
+    </section>
+
+    <div class="grid-2">
+        <section class="panel stack">
+            <div>
+                <h2 th:text="${orderForm.orderId == null ? 'Naujas užsakymas' : 'Užsakymo redagavimas'}">Užsakymo forma</h2>
+                <div th:if="${successMessage}" class="banner success" th:text="${successMessage}">Sėkmė</div>
+                <div th:if="${errorMessage}" class="banner error" th:text="${errorMessage}">Klaida</div>
+            </div>
+
+            <form th:action="@{/klientas/uzsakymai}" th:object="${orderForm}" method="post" class="stack">
+                <input type="hidden" th:field="*{orderId}">
+                <div class="field">
+                    <label for="clientId">Klientas</label>
+                    <select id="clientId" th:field="*{clientId}" required>
+                        <option value="">Pasirink klientą</option>
+                        <option th:each="client : ${clients}" th:value="${client.id}" th:text="${client.username + ' (' + client.firstName + ' ' + client.lastName + ')'}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="orderType">Užsakymo tipas</label>
+                    <select id="orderType" th:field="*{orderType}" required>
+                        <option th:each="type : ${orderTypes}" th:value="${type}" th:text="${type}"></option>
+                    </select>
+                </div>
+
+                <div class="cards compact-cards">
+                    <article class="list-item" th:each="product, stat : ${products}">
+                        <div class="split">
+                            <div>
+                                <h3 th:text="${product.name}">Produktas</h3>
+                                <p class="meta" th:text="${product.description != null and !product.description.isBlank() ? product.description : 'Aprašymas dar neįvestas.'}">Aprašymas</p>
+                            </div>
+                            <div class="right">
+                                <div class="price" th:text="${#numbers.formatDecimal(product.price, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</div>
+                                <div class="meta" th:text="${'Sandėlyje: ' + product.stockQuantity}">0</div>
+                            </div>
+                        </div>
+                        <p class="meta" th:text="${product.productionType + (product.customMade ? ' | pagal užsakymą' : ' | standartinis')}">Meta</p>
+                        <input type="hidden" th:field="*{items[__${stat.index}__].productId}">
+                        <div class="field inline-field">
+                            <label th:for="${'qty-' + stat.index}">Kiekis</label>
+                            <input type="number" min="0" step="1" th:id="${'qty-' + stat.index}" th:field="*{items[__${stat.index}__].quantity}">
+                        </div>
+                    </article>
+                </div>
+
+                <div class="actions">
+                    <button type="submit" th:text="${orderForm.orderId == null ? 'Sukurti užsakymą' : 'Išsaugoti pakeitimus'}">Saugoti</button>
+                    <a class="btn-secondary" th:href="@{/klientas(clientId=${selectedClientId},status=${selectedStatus})}">Atšaukti redagavimą</a>
+                </div>
+            </form>
+        </section>
+
+        <aside class="panel stack">
+            <form method="get" th:action="@{/klientas}" class="stack compact-form">
+                <h2>Filtravimas</h2>
+                <div class="field">
+                    <label for="filterClientId">Klientas</label>
+                    <select id="filterClientId" name="clientId">
+                        <option value="">Pasirink klientą</option>
+                        <option th:each="client : ${clients}" th:value="${client.id}" th:selected="${selectedClientId == client.id}" th:text="${client.username}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="status">Būsena</label>
+                    <select id="status" name="status">
+                        <option value="">Visos</option>
+                        <option th:each="orderStatus : ${orderStatuses}" th:value="${orderStatus}" th:selected="${selectedStatus == orderStatus}" th:text="${orderStatus}"></option>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button type="submit">Rodyti</button>
+                    <a class="btn-secondary" href="/klientas">Valyti</a>
+                </div>
+            </form>
+
+            <div class="stack">
+                <h2>Ankstesni užsakymai</h2>
+                <p th:if="${selectedClientId == null}">Pasirink klientą, kad matytum jo užsakymus.</p>
+                <p th:if="${selectedClientId != null and #lists.isEmpty(clientOrders)}">Pasirinktas klientas neturi užsakymų pagal esamą filtrą.</p>
+                <div class="cards" th:if="${selectedClientId != null and !#lists.isEmpty(clientOrders)}">
+                    <article class="list-item" th:each="order : ${clientOrders}">
+                        <div class="split">
+                            <div>
+                                <h3 th:text="${'Užsakymas #' + order.id}">Užsakymas</h3>
+                                <p class="meta" th:text="${'Tipas: ' + order.orderType + ' | būsena: ' + order.status}">Meta</p>
+                            </div>
+                            <span class="badge" th:text="${order.status}">NAUJAS</span>
+                        </div>
+                        <p class="meta" th:text="${'Sukurta: ' + #temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">Data</p>
+                        <p class="meta" th:text="${'Suma: ' + #numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'COMMA') + ' EUR'}">Suma</p>
+                        <p class="meta" th:text="${'Prekės: ' + #strings.listJoin(order.items.![product.name], ', ')}">Prekės</p>
+                        <div class="card-actions">
+                            <a class="btn-secondary" th:if="${order.status.name() != 'ATSAUKTAS' and order.status.name() != 'UZBAIGTAS' and !(order.orderType.name() == 'GAMYBA_PAGAL_UZSAKYMA' and (order.status.name() == 'VYKDOMAS' or order.status.name() == 'PARUOSTAS'))}" th:href="@{/klientas(clientId=${selectedClientId},status=${selectedStatus},editOrderId=${order.id})}">Redaguoti</a>
+                            <form th:if="${order.status.name() != 'UZBAIGTAS'}" th:action="@{/klientas/uzsakymai/{id}/atsaukti(id=${order.id})}" method="post">
+                                <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                                <button type="submit" class="btn-secondary">Atšaukti</button>
+                            </form>
+                            <form th:if="${order.status.name() != 'UZBAIGTAS'}" th:action="@{/klientas/uzsakymai/{id}/trinti(id=${order.id})}" method="post">
+                                <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                                <button type="submit" class="btn-secondary">Trinti</button>
+                            </form>
+                            <form th:if="${(order.status.name() == 'PARUOSTAS') or (order.orderType.name() == 'PIRKIMAS_IS_SANDELIO' and order.status.name() != 'ATSAUKTAS' and order.status.name() != 'UZBAIGTAS')}" th:action="@{/klientas/uzsakymai/{id}/atsiimti(id=${order.id})}" method="post">
+                                <input type="hidden" name="clientId" th:value="${selectedClientId}">
+                                <button type="submit">Atsiimti / apmokėti</button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

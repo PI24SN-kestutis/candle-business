@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="lt" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buhalterio zona</title>
+    <link rel="stylesheet" th:href="@{/app.css}">
+</head>
+<body>
+<header class="top-nav">
+    <div class="container">
+        <a href="/" class="home-link">Grįžti į pagrindinį puslapį</a>
+    </div>
+</header>
+<main class="shell stack">
+    <section class="hero">
+        <div class="eyebrow">Buhalterio zona</div>
+        <h1>Išlaidų valdymas</h1>
+        <p>Buhalteris gali kurti, redaguoti ir trinti išlaidų įrašus.</p>
+    </section>
+
+    <div class="grid-2">
+        <section class="panel stack">
+            <h2 th:text="${expenseForm.expenseId == null ? 'Debetas (Naujos išlaidos)' : 'Išlaidos redagavimas'}">Išlaida</h2>
+            <div th:if="${successMessage}" class="banner success" th:text="${successMessage}">Sėkmė</div>
+            <div th:if="${errorMessage}" class="banner error" th:text="${errorMessage}">Klaida</div>
+
+            <form th:action="@{/buhalteris/islaidos}" th:object="${expenseForm}" method="post">
+                <input type="hidden" th:field="*{expenseId}">
+                <div class="field">
+                    <label for="financierId">Buhalteris</label>
+                    <select id="financierId" th:field="*{financierId}" required>
+                        <option value="">Pasirink buhalterį</option>
+                        <option th:each="financier : ${financiers}" th:value="${financier.id}" th:text="${financier.username + ' (' + financier.firstName + ' ' + financier.lastName + ')'}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="category">Kategorija</label>
+                    <select id="category" th:field="*{category}" required>
+                        <option value="">Pasirink kategoriją</option>
+                        <option th:each="category : ${expenseCategories}" th:value="${category}" th:text="${category}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="description">Aprašymas</label>
+                    <textarea id="description" th:field="*{description}" required></textarea>
+                </div>
+                <div class="field">
+                    <label for="amount">Suma</label>
+                    <input id="amount" type="number" min="0.01" step="0.01" th:field="*{amount}" required>
+                </div>
+                <div class="field">
+                    <label for="expenseDate">Data</label>
+                    <input id="expenseDate" type="date" th:field="*{expenseDate}" required>
+                </div>
+                <div class="actions">
+                    <button type="submit" th:text="${expenseForm.expenseId == null ? 'Išsaugoti išlaidą' : 'Atnaujinti išlaidą'}">Saugoti</button>
+                    <a class="btn-secondary" href="/buhalteris">Atšaukti redagavimą</a>
+                </div>
+            </form>
+        </section>
+
+        <aside class="panel stack">
+            <h2>Naujausios išlaidos</h2>
+            <div class="cards" th:if="${!#lists.isEmpty(expenses)}">
+                <article class="list-item" th:each="expense : ${expenses}">
+                    <div class="split">
+                        <div>
+                            <h3 th:text="${expense.category}">Kategorija</h3>
+                            <p class="meta" th:text="${expense.description}">Aprašymas</p>
+                        </div>
+                        <div class="price" th:text="${#numbers.formatDecimal(expense.amount, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</div>
+                    </div>
+                    <p class="meta" th:text="${'Data: ' + expense.expenseDate + ' | buhalteris: ' + expense.createdByFinancier.username}">Meta</p>
+                    <div class="card-actions">
+                        <a class="btn-secondary" th:href="@{/buhalteris(editExpenseId=${expense.id})}">Redaguoti</a>
+                        <form th:action="@{/buhalteris/islaidos/{id}/trinti(id=${expense.id})}" method="post">
+                            <button type="submit" class="btn-secondary">Trinti</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+            <p th:if="${#lists.isEmpty(expenses)}">Išlaidų įrašų dar nėra.</p>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

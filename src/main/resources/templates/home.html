@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="lt" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candle Business</title>
+    <link rel="stylesheet" th:href="@{/app.css}">
+</head>
+<body>
+<main class="shell stack">
+    <section class="hero">
+        <div class="eyebrow">Candle Business</div>
+        <h1>Žvakių ir muilo verslo sistema</h1>
+        <p>Pasirink rolę ir eik į tau skirtą sistemos dalį.</p>
+    </section>
+
+    <section class="role-grid">
+        <a class="role-card" th:href="@{/vadovas}"><div class="label">Rolė</div><h2>Vadovas</h2><p>Produktai, klientai ir apyvarta.</p></a>
+        <a class="role-card" th:href="@{/darbuotojas}"><div class="label">Rolė</div><h2>Darbuotojas</h2><p>Gamybos pažymėjimai ir vykdymas.</p></a>
+        <a class="role-card" th:href="@{/buhalteris}"><div class="label">Rolė</div><h2>Buhalteris</h2><p>Išlaidų registravimas ir peržiūra.</p></a>
+        <a class="role-card" th:href="@{/klientas}"><div class="label">Rolė</div><h2>Klientas</h2><p>Užsakymai ir istorija.</p></a>
+    </section>
+</main>
+</body>
+</html>

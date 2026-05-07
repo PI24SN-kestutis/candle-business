@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="lt" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darbuotojo zona</title>
+    <link rel="stylesheet" th:href="@{/app.css}">
+</head>
+<body>
+<header class="top-nav">
+    <div class="container">
+        <a href="/" class="home-link">Grįžti į pagrindinį puslapį</a>
+    </div>
+</header>
+<main class="shell stack">
+    <section class="hero">
+        <div class="eyebrow">Darbuotojo zona</div>
+        <h1>Gamybos valdymas</h1>
+        <p>Darbuotojas gali filtruoti užsakymus, paleisti gamybą ir atšaukti netinkamą užsakymą.</p>
+    </section>
+
+    <section class="panel stack compact-form">
+        <div th:if="${successMessage}" class="banner success" th:text="${successMessage}">Sėkmė</div>
+        <div th:if="${errorMessage}" class="banner error" th:text="${errorMessage}">Klaida</div>
+        <form method="get" th:action="@{/darbuotojas}" class="grid-2">
+            <div class="field">
+                <label for="employeeId">Darbuotojas</label>
+                <select id="employeeId" name="employeeId">
+                    <option value="">Pasirink darbuotoją</option>
+                    <option th:each="employee : ${employees}" th:value="${employee.id}" th:selected="${selectedEmployeeId == employee.id}" th:text="${employee.username + ' (' + employee.firstName + ' ' + employee.lastName + ')'}"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="status">Būsena</label>
+                <select id="status" name="status">
+                    <option value="">Visos</option>
+                    <option th:each="orderStatus : ${orderStatuses}" th:value="${orderStatus}" th:selected="${selectedStatus == orderStatus}" th:text="${orderStatus}"></option>
+                </select>
+            </div>
+            <div class="actions span-2">
+                <button type="submit">Rodyti</button>
+                <a class="btn-secondary" href="/darbuotojas">Valyti</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel stack">
+        <h2>Užsakymų kortelės</h2>
+        <p th:if="${#lists.isEmpty(orders)}">Pagal pasirinktą filtrą užsakymų nerasta.</p>
+        <div class="cards" th:if="${!#lists.isEmpty(orders)}">
+            <article class="list-item" th:each="order : ${orders}">
+                <div class="split">
+                    <div>
+                        <h3 th:text="${'Užsakymas #' + order.id}">Užsakymas</h3>
+                        <p class="meta" th:text="${'Klientas: ' + order.client.username + ' | tipas: ' + order.orderType}">Klientas</p>
+                    </div>
+                    <span class="badge" th:text="${order.status}">NAUJAS</span>
+                </div>
+                <p class="meta" th:text="${'Prekės: ' + #strings.listJoin(order.items.![product.name + ' x' + quantity], ', ')}">Prekės</p>
+                <p class="meta" th:text="${'Suma: ' + #numbers.formatDecimal(order.totalAmount, 1, 'POINT', 2, 'COMMA') + ' EUR'}">Suma</p>
+                <div class="card-actions">
+                    <form th:if="${selectedEmployeeId != null and order.orderType.name() == 'GAMYBA_PAGAL_UZSAKYMA' and order.status.name() != 'ATSAUKTAS' and order.status.name() != 'UZBAIGTAS' and order.status.name() != 'PARUOSTAS'}" th:action="@{/darbuotojas/uzsakymai/{id}/gaminti(id=${order.id})}" method="post" class="inline-form">
+                        <input type="hidden" name="employeeId" th:value="${selectedEmployeeId}">
+                        <input type="hidden" name="status" th:value="${selectedStatus}">
+                        <input type="text" name="note" placeholder="Pastaba klientui">
+                        <button type="submit">Gaminti</button>
+                    </form>
+                    <form th:if="${order.status.name() != 'ATSAUKTAS' and order.status.name() != 'UZBAIGTAS'}" th:action="@{/darbuotojas/uzsakymai/{id}/atsaukti(id=${order.id})}" method="post">
+                        <input type="hidden" name="employeeId" th:value="${selectedEmployeeId}">
+                        <input type="hidden" name="status" th:value="${selectedStatus}">
+                        <button type="submit" class="btn-secondary">Atšaukti</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+</body>
+</html>

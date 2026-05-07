@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="lt" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vadovo zona</title>
+    <link rel="stylesheet" th:href="@{/app.css}">
+    <style>
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<main class="shell stack">
+    <header class="split">
+        <div class="eyebrow">Vadovo zona</div>
+        <nav class="menu">
+            <a href="#" data-target="summary">Suvestinė</a>
+            <a href="#" data-target="products">Produktai</a>
+            <a href="#" data-target="ingredients">Ingredientai</a>
+            <a href="#" data-target="suppliers">Tiekėjai</a>
+            <a href="#" data-target="addresses">Adresai</a>
+            <a href="#" data-target="contracts">Sutartys</a>
+            <a href="#" data-target="price-audit">Kainų auditas</a>
+        </nav>
+        <a href="/" class="btn-secondary">Grįžti į pagrindinį puslapį</a>
+    </header>
+
+    <div th:if="${successMessage}" class="banner success" th:text="${successMessage}">Sėkmė</div>
+    <div th:if="${errorMessage}" class="banner error" th:text="${errorMessage}">Klaida</div>
+
+    <section id="summary" class="grid-3">
+        <article class="card"><div class="label">Produktai</div><h2 class="metric" th:text="${dashboard.productCount}">0</h2><p>Registruoti gaminiai.</p></article>
+        <article class="card"><div class="label">Ingredientai</div><h2 class="metric" th:text="${dashboard.ingredientCount}">0</h2><p>Naudojamos žaliavos.</p></article>
+        <article class="card"><div class="label">Klientai</div><h2 class="metric" th:text="${dashboard.clientCount}">0</h2><p>Klientų kiekis.</p></article>
+        <article class="card"><div class="label">Darbuotojai</div><h2 class="metric" th:text="${dashboard.employeeCount}">0</h2><p>Aktyvūs komandos nariai.</p></article>
+        <div class="grid-2 span-3">
+            <article class="card"><div class="label">Apyvarta</div><h2 class="metric" th:text="${#numbers.formatDecimal(dashboard.totalRevenue, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</h2><p>Bendra užsakymų suma.</p></article>
+            <article class="card"><div class="label">Išlaidos ir likutis</div><h2 class="metric" th:text="${#numbers.formatDecimal(dashboard.totalExpenses, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</h2><p>Likutis: <strong th:text="${#numbers.formatDecimal(dashboard.balance, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</strong></p></article>
+        </div>
+    </section>
+
+    <div id="products" class="hidden">
+        <div class="grid-2">
+            <section class="panel stack">
+                <h2 th:text="${productForm.id == null ? 'Naujas produktas' : 'Produkto redagavimas'}">Produktas</h2>
+                <form th:action="@{/vadovas/produktai}" th:object="${productForm}" method="post">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="field"><label for="name">Pavadinimas</label><input id="name" th:field="*{name}" required></div>
+                    <div class="field"><label for="description">Aprašymas</label><textarea id="description" th:field="*{description}"></textarea></div>
+                    <div class="grid-2">
+                        <div class="field"><label for="price">Kaina</label><input id="price" type="number" min="0" step="0.01" th:field="*{price}" required></div>
+                        <div class="field"><label for="stockQuantity">Sandėlis</label><input id="stockQuantity" type="number" min="0" step="1" th:field="*{stockQuantity}" required></div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="field"><label for="productionType">Gamybos tipas</label><select id="productionType" th:field="*{productionType}"><option th:each="type : ${productionTypes}" th:value="${type}" th:text="${type}"></option></select></div>
+                        <div class="field checkbox-row"><label><input type="checkbox" th:field="*{customMade}"> Gaminama pagal užsakymą</label></div>
+                    </div>
+                    <div class="field">
+                        <label for="ingredientIds">Ingredientai</label>
+                        <select id="ingredientIds" multiple th:field="*{ingredientIds}" size="6">
+                            <option th:each="ingredient : ${ingredients}" th:value="${ingredient.id}" th:text="${ingredient.name + ' (' + ingredient.type + ')'}"></option>
+                        </select>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" th:text="${productForm.id == null ? 'Išsaugoti produktą' : 'Atnaujinti produktą'}">Saugoti</button>
+                        <a class="btn-secondary" href="/vadovas">Atšaukti redagavimą</a>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel stack">
+                <h2>Produktų sąrašas</h2>
+                <div class="cards">
+                    <article class="list-item" th:each="product : ${products.content}">
+                        <div class="split">
+                            <div>
+                                <h3 th:text="${product.name}">Produktas</h3>
+                                <p class="meta" th:text="${product.description}">Aprašymas</p>
+                            </div>
+                            <div class="right">
+                                <div class="price" th:text="${#numbers.formatDecimal(product.price, 1, 'POINT', 2, 'COMMA')} + ' EUR'">0.00 EUR</div>
+                                <div class="meta" th:text="${'Sandėlis: ' + product.stockQuantity}">0</div>
+                            </div>
+                        </div>
+                        <p class="meta" th:text="${product.productionType + (product.customMade ? ' | pagal užsakymą' : ' | standartinis')}">Meta</p>
+                        <p class="meta" th:text="${'Ingredientai: ' + (product.ingredients.isEmpty() ? 'nėra' : #strings.listJoin(product.ingredients.![name], ', '))}"></p>
+                        <div class="card-actions">
+                            <a class="btn-secondary" th:href="@{/vadovas(editProductId=${product.id})}">Redaguoti</a>
+                            <form th:action="@{/vadovas/produktai/{id}/trinti(id=${product.id})}" method="post">
+                                <button type="submit" class="btn-secondary">Trinti</button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+                <div class="pagination" th:if="${products.totalPages > 0}">
+                    <a th:if="${products.hasPrevious()}" th:href="@{/vadovas(page=${products.number - 1}, size=${products.size})}">Ankstesnis</a>
+                    <span th:text="${products.number + 1} + ' / ' + ${products.totalPages}"></span>
+                    <a th:if="${products.hasNext()}" th:href="@{/vadovas(page=${products.number + 1}, size=${products.size})}">Kitas</a>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="ingredients" class="hidden">
+        <div class="grid-2">
+            <section class="panel stack">
+                <h2 th:text="${ingredientForm.id == null ? 'Naujas ingredientas' : 'Ingrediento redagavimas'}">Ingredientas</h2>
+                <form th:action="@{/vadovas/ingredientai}" th:object="${ingredientForm}" method="post">
+                    <input type="hidden" th:field="*{id}">
+                    <div class="field"><label for="ingredientName">Pavadinimas</label><input id="ingredientName" th:field="*{name}" required></div>
+                    <div class="field"><label for="type">Tipas</label><select id="type" th:field="*{type}"><option th:each="typeValue : ${ingredientTypes}" th:value="${typeValue}" th:text="${typeValue}"></option></select></div>
+                    <div class="field">
+                        <label for="supplierId">Tiekėjas</label>
+                        <select id="supplierId" th:field="*{supplierId}">
+                            <option value="">Pasirink tiekėją</option>
+                            <option th:each="supplier : ${suppliers}" th:value="${supplier.id}" th:text="${supplier.name}"></option>
+                        </select>
+                    </div>
+                    <div class="actions">
+                        <button type="submit" th:text="${ingredientForm.id == null ? 'Išsaugoti ingredientą' : 'Atnaujinti ingredientą'}">Saugoti</button>
+                        <a class="btn-secondary" href="/vadovas">Atšaukti redagavimą</a>
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel stack">
+                <h2>Ingredientų sąrašas</h2>
+                <div class="cards">
+                    <article class="list-item" th:each="ingredient : ${ingredients}">
+                        <div class="split">
+                            <h3 th:text="${ingredient.name}">Ingredientas</h3>
+                            <span class="badge" th:text="${ingredient.type}">NATURALUS</span>
+                        </div>
+                        <p class="meta" th:text="${'Tiekėjas: ' + (ingredient.supplier != null ? ingredient.supplier.name : 'nenurodytas')}">Tiekėjas</p>
+                        <div class="card-actions">
+                            <a class="btn-secondary" th:href="@{/vadovas(editIngredientId=${ingredient.id})}">Redaguoti</a>
+                            <form th:action="@{/vadovas/ingredientai/{id}/trinti(id=${ingredient.id})}" method="post">
+                                <button type="submit" class="btn-secondary">Trinti</button>
+                            </form>
+                        </div>
+                    </article>
+                </div>
+            </section>
+        </div>
+    </div>
+    
+    <section id="price-audit" class="panel stack hidden">
+        <h2>Kainų pokyčių auditas</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Audito ID</th>
+                    <th>Produkto ID</th>
+                    <th>Sena kaina</th>
+                    <th>Nauja kaina</th>
+                    <th>Pakeitimo data</th>
+                    <th>Pakeitė</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="audit : ${priceAudits}">
+                    <td th:text="${audit.audit_id}"></td>
+                    <td th:text="${audit.product_id}"></td>
+                    <td th:text="${#numbers.formatDecimal(audit.old_price, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></td>
+                    <td th:text="${#numbers.formatDecimal(audit.new_price, 1, 'POINT', 2, 'COMMA')} + ' EUR'"></td>
+                    <td th:text="${#temporals.format(audit.change_timestamp, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td th:text="${audit.changed_by}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <div id="suppliers" class="hidden">
+        <section class="panel stack">
+            <h2 th:text="${supplierForm.id == null ? 'Naujas tiekėjas' : 'Tiekėjo redagavimas'}">Tiekėjas</h2>
+            <form th:action="@{/vadovas/tiekejai}" th:object="${supplierForm}" method="post" class="grid-2">
+                <input type="hidden" th:field="*{id}">
+                <div class="field">
+                    <label for="supplierName">Pavadinimas</label>
+                    <input id="supplierName" th:field="*{name}" required>
+                </div>
+                <div class="field">
+                    <label for="addressId">Adresas</label>
+                    <select id="addressId" th:field="*{addressId}">
+                        <option value="">Pasirink adresą</option>
+                        <option th:each="address : ${addresses}" th:value="${address.id}" th:text="${address.country + ', ' + address.street + ' ' + address.houseNumber + (address.roomNumber != null ? ', ' + address.roomNumber : '')}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="contractId">Sutartis</label>
+                    <select id="contractId" th:field="*{contractId}">
+                        <option value="">Pasirink sutartį</option>
+                        <option th:each="contract : ${contracts}" th:value="${contract.id}" th:text="${contract.contractNumber}"></option>
+                    </select>
+                </div>
+                <div class="actions">
+                    <button type="submit" th:text="${supplierForm.id == null ? 'Išsaugoti tiekėją' : 'Atnaujinti tiekėją'}">Saugoti</button>
+                    <a class="btn-secondary" href="/vadovas">Atšaukti redagavimą</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel stack">
+            <h2>Tiekėjų sąrašas</h2>
+            <div class="cards">
+                <article class="list-item" th:each="supplier : ${suppliers}">
+                    <div class="split">
+                        <h3 th:text="${supplier.name}">Tiekėjas</h3>
+                        <span class="badge">SUPPLIER</span>
+                    </div>
+                    <p class="meta" th:text="${'Adresas: ' + (supplier.address != null ? supplier.address.country + ', ' + supplier.address.street + ' ' + supplier.address.houseNumber + (supplier.address.roomNumber != null ? ', ' + supplier.address.roomNumber : '') : 'nenurodytas')}">Adresas</p>
+                    <p class="meta" th:text="${'Sutartis: ' + (supplier.contract != null ? supplier.contract.contractNumber : 'nenurodyta')}">Sutartis</p>
+                    <div class="card-actions">
+                        <a class="btn-secondary" th:href="@{/vadovas(editSupplierId=${supplier.id})}">Redaguoti</a>
+                        <form th:action="@{/vadovas/tiekejai/{id}/trinti(id=${supplier.id})}" method="post">
+                            <button type="submit" class="btn-secondary">Trinti</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+            <p th:if="${#lists.isEmpty(suppliers)}">Tiekėjų dar nėra.</p>
+        </section>
+    </div>
+
+    <div id="addresses" class="hidden">
+        <section class="panel stack">
+            <h2 th:text="${addressForm.id == null ? 'Naujas adresas' : 'Adreso redagavimas'}">Adresas</h2>
+            <form th:action="@{/vadovas/adresai}" th:object="${addressForm}" method="post" class="grid-2">
+                <input type="hidden" th:field="*{id}">
+                <div class="field">
+                    <label for="country">Šalis</label>
+                    <input id="country" th:field="*{country}" required>
+                </div>
+                <div class="field">
+                    <label for="street">Gatvė</label>
+                    <input id="street" th:field="*{street}" required>
+                </div>
+                <div class="field">
+                    <label for="houseNumber">Namo nr.</label>
+                    <input id="houseNumber" th:field="*{houseNumber}" required>
+                </div>
+                <div class="field">
+                    <label for="roomNumber">Patalpos nr.</label>
+                    <input id="roomNumber" th:field="*{roomNumber}">
+                </div>
+                <div class="actions">
+                    <button type="submit" th:text="${addressForm.id == null ? 'Išsaugoti adresą' : 'Atnaujinti adresą'}">Saugoti</button>
+                    <a class="btn-secondary" href="/vadovas">Atšaukti redagavimą</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel stack">
+            <h2>Adresų sąrašas</h2>
+            <div class="cards">
+                <article class="list-item" th:each="address : ${addresses}">
+                    <div class="split">
+                        <h3 th:text="${address.country}">Šalis</h3>
+                        <span class="badge">ADDRESS</span>
+                    </div>
+                    <p class="meta" th:text="${address.street + ' ' + address.houseNumber + (address.roomNumber != null ? ', ' + address.roomNumber : '')}"></p>
+                    <div class="card-actions">
+                        <a class="btn-secondary" th:href="@{/vadovas(editAddressId=${address.id})}">Redaguoti</a>
+                        <form th:action="@{/vadovas/adresai/{id}/trinti(id=${address.id})}" method="post">
+                            <button type="submit" class="btn-secondary">Trinti</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+            <p th:if="${#lists.isEmpty(addresses)}">Adresų dar nėra.</p>
+        </section>
+    </div>
+
+    <div id="contracts" class="hidden">
+        <section class="panel stack">
+            <h2 th:text="${contractForm.id == null ? 'Nauja sutartis' : 'Sutarties redagavimas'}">Sutartis</h2>
+            <form th:action="@{/vadovas/sutartys}" th:object="${contractForm}" method="post" class="stack">
+                <input type="hidden" th:field="*{id}">
+                <div class="field">
+                    <label for="contractNumber">Unikalus numeris</label>
+                    <input id="contractNumber" th:field="*{contractNumber}" required>
+                </div>
+                <div class="field">
+                    <label for="contractText">Tekstas</label>
+                    <textarea id="contractText" th:field="*{text}" rows="5" required></textarea>
+                </div>
+                <div class="actions">
+                    <button type="submit" th:text="${contractForm.id == null ? 'Išsaugoti sutartį' : 'Atnaujinti sutartį'}">Saugoti</button>
+                    <a class="btn-secondary" href="/vadovas">Atšaukti redagavimą</a>
+                </div>
+            </form>
+        </section>
+
+        <section class="panel stack">
+            <h2>Sutarčių sąrašas</h2>
+            <div class="cards">
+                <article class="list-item" th:each="contract : ${contracts}">
+                    <div class="split">
+                        <h3 th:text="${contract.contractNumber}">Sutartis</h3>
+                        <span class="badge">CONTRACT</span>
+                    </div>
+                    <p class="meta" th:text="${contract.text}"></p>
+                    <div class="card-actions">
+                        <a class="btn-secondary" th:href="@{/vadovas(editContractId=${contract.id})}">Redaguoti</a>
+                        <form th:action="@{/vadovas/sutartys/{id}/trinti(id=${contract.id})}" method="post">
+                            <button type="submit" class="btn-secondary">Trinti</button>
+                        </form>
+                    </div>
+                </article>
+            </div>
+            <p th:if="${#lists.isEmpty(contracts)}">Sutarčių dar nėra.</p>
+        </section>
+    </div>
+</main>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const menuLinks = document.querySelectorAll('.menu a');
+        const sections = {
+            'summary': document.getElementById('summary'),
+            'products': document.getElementById('products'),
+            'ingredients': document.getElementById('ingredients'),
+            'suppliers': document.getElementById('suppliers'),
+            'addresses': document.getElementById('addresses'),
+            'contracts': document.getElementById('contracts'),
+            'price-audit': document.getElementById('price-audit'),
+        };
+
+        menuLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+
+                // Hide all sections
+                for (const id in sections) {
+                    if (sections[id]) {
+                        sections[id].classList.add('hidden');
+                    }
+                }
+
+                // Show the target section
+                if (sections[targetId]) {
+                    sections[targetId].classList.remove('hidden');
+                }
+            });
+        });
+
+        // Show summary by default
+        if (sections.summary) {
+            sections.summary.classList.remove('hidden');
+        }
+    });
+</script>
+</body>
+</html>
