@@ -41,7 +41,7 @@
 
     <div id="products" class="hidden">
         <div class="grid-2">
-            <section class="panel stack">
+            <section class="panel stack compact-form">
                 <h2 th:text="${productForm.id == null ? 'Naujas produktas' : 'Produkto redagavimas'}">Produktas</h2>
                 <form th:action="@{/vadovas/produktai}" th:object="${productForm}" method="post">
                     <input type="hidden" th:field="*{id}">
